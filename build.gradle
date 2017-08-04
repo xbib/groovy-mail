@@ -1,0 +1,75 @@
+plugins {
+    id "org.sonarqube" version "2.5"
+    id "org.xbib.gradle.plugin.asciidoctor" version "1.5.4.1.0"
+    id "io.codearte.nexus-staging" version "0.7.0"
+}
+
+printf "Host: %s\nOS: %s %s %s\nJVM: %s %s %s %s\nGroovy: %s\nGradle: %s\n" +
+        "Build: group: ${project.group} name: ${project.name} version: ${project.version}\n",
+        InetAddress.getLocalHost(),
+        System.getProperty("os.name"),
+        System.getProperty("os.arch"),
+        System.getProperty("os.version"),
+        System.getProperty("java.version"),
+        System.getProperty("java.vm.version"),
+        System.getProperty("java.vm.vendor"),
+        System.getProperty("java.vm.name"),
+        GroovySystem.getVersion(),
+        gradle.gradleVersion
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+apply plugin: "jacoco"
+apply plugin: 'org.xbib.gradle.plugin.asciidoctor'
+apply plugin: "io.codearte.nexus-staging"
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    wagon
+}
+
+dependencies {
+    compile "com.sun.mail:javax.mail:${project.property('mail.version')}"
+    compileOnly 'org.codehaus.groovy:groovy-all:2.4.12'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
+    testCompile 'junit:junit:4.12'
+    wagon 'org.apache.maven.wagon:wagon-ssh:2.12'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier 'sources'
+    from sourceSets.main.allSource
+}
+
+groovydoc {
+    docTitle = description
+}
+
+task groovydocJar(type: Jar, dependsOn: 'groovydoc') {
+    from groovydoc.destinationDir
+    classifier = 'javadoc' // for sonatype validation
+}
+
+artifacts {
+    archives sourcesJar, groovydocJar
+}
+
+if (project.hasProperty('signing.keyId')) {
+    signing {
+        sign configurations.archives
+    }
+}
+
+apply from: 'gradle/ext.gradle'
+apply from: 'gradle/publish.gradle'
+apply from: 'gradle/sonarqube.gradle'
