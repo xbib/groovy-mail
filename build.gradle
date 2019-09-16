@@ -1,49 +1,26 @@
 plugins {
-    id "org.sonarqube" version "2.5"
+    id "com.github.spotbugs" version "2.0.0"
     id "org.xbib.gradle.plugin.asciidoctor" version "1.5.4.1.0"
-    id "io.codearte.nexus-staging" version "0.7.0"
+    id "io.codearte.nexus-staging" version "0.11.0"
 }
-
-printf "Host: %s\nOS: %s %s %s\nJVM: %s %s %s %s\nGroovy: %s\nGradle: %s\n" +
-        "Build: group: ${project.group} name: ${project.name} version: ${project.version}\n",
-        InetAddress.getLocalHost(),
-        System.getProperty("os.name"),
-        System.getProperty("os.arch"),
-        System.getProperty("os.version"),
-        System.getProperty("java.version"),
-        System.getProperty("java.vm.version"),
-        System.getProperty("java.vm.vendor"),
-        System.getProperty("java.vm.name"),
-        GroovySystem.getVersion(),
-        gradle.gradleVersion
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
-apply plugin: 'signing'
-apply plugin: 'findbugs'
 apply plugin: 'pmd'
 apply plugin: 'checkstyle'
-apply plugin: "jacoco"
 apply plugin: 'org.xbib.gradle.plugin.asciidoctor'
 apply plugin: "io.codearte.nexus-staging"
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-
-repositories {
-    mavenCentral()
-}
-
-configurations {
-    wagon
-}
-
 dependencies {
     compile "com.sun.mail:javax.mail:${project.property('mail.version')}"
-    compileOnly 'org.codehaus.groovy:groovy-all:2.4.12'
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
-    testCompile 'junit:junit:4.12'
-    wagon 'org.apache.maven.wagon:wagon-ssh:2.12'
+    compileOnly "org.codehaus.groovy:groovy-all:${project.property('groovy.version')}"
+    testCompile "org.codehaus.groovy:groovy-all:${project.property('groovy.version')}"
+    testCompile "junit:junit:${project.property('junit.version')}"
+}
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -64,12 +41,87 @@ artifacts {
     archives sourcesJar, groovydocJar
 }
 
-if (project.hasProperty('signing.keyId')) {
-    signing {
-        sign configurations.archives
+ext {
+    user = 'jprante'
+    projectName = 'groovy-mail'
+    projectDescription = 'Mail extensions for Groovy'
+    scmUrl = "https://github.com/${user}/${name}"
+    scmConnection = "scm:git:git://github.com/${user}/${name}.git"
+    scmDeveloperConnection = "scm:git:git://github.com/${user}/${name}.git"
+}
+
+task sonatypeUpload(type: Upload) {
+    configuration = configurations.archives
+    uploadDescriptor = true
+    repositories {
+        if (project.hasProperty('ossrhUsername')) {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                repository(url: uri(ossrhReleaseUrl)) {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+                snapshotRepository(url: uri(ossrhSnapshotUrl)) {
+                    authentication(userName: ossrhUsername, password: ossrhPassword)
+                }
+                pom.project {
+                    name projectName
+                    description projectDescription
+                    packaging 'jar'
+                    inceptionYear '2016'
+                    url scmUrl
+                    organization {
+                        name 'xbib'
+                        url 'http://xbib.org'
+                    }
+                    developers {
+                        developer {
+                            id user
+                            name 'Jörg Prante'
+                            email 'joergprante@gmail.com'
+                            url 'https://github.com/jprante'
+                        }
+                    }
+                    scm {
+                        url scmUrl
+                        connection scmConnection
+                        developerConnection scmDeveloperConnection
+                    }
+                    licenses {
+                        license {
+                            name 'The Apache License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-apply from: 'gradle/ext.gradle'
-apply from: 'gradle/publish.gradle'
-apply from: 'gradle/sonarqube.gradle'
+nexusStaging {
+    packageGroup = "org.xbib"
+}
+
+spotbugs {
+    toolVersion = '3.1.12'
+    sourceSets = [sourceSets.main]
+    ignoreFailures = true
+    effort = "max"
+    reportLevel = "high"
+}
+
+tasks.withType(Pmd) {
+    ignoreFailures = true
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+tasks.withType(Checkstyle) {
+    ignoreFailures = true
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
