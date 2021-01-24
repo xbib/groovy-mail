@@ -5,8 +5,6 @@ import javax.mail.Session;
 import javax.mail.Store;
 import java.util.Properties;
 
-/**
- */
 public class ImapContext {
 
     Properties properties;

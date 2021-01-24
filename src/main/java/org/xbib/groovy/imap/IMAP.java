@@ -8,7 +8,6 @@ import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.SearchTerm;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Properties;
 
@@ -51,7 +50,7 @@ public class IMAP {
         return performWithContext(action);
     }
 
-    public void eachFolder(String folderName, String folderPattern, Closure closure) throws Exception {
+    public void eachFolder(String folderName, String folderPattern, Closure<?> closure) throws Exception {
         WithContext<Object> action = ctx -> {
             Folder folder = ctx.store.getFolder(folderName);
             if (folder.exists()) {
@@ -114,7 +113,7 @@ public class IMAP {
         return performWithContext(action);
     }
 
-    public void eachMessage(String folderName, Closure closure) throws Exception {
+    public void eachMessage(String folderName, Closure<?> closure) throws Exception {
         WithContext<Object> action = ctx -> {
             Folder folder = ctx.store.getFolder(folderName);
             if (folder.exists()) {
@@ -130,7 +129,7 @@ public class IMAP {
         performWithContext(action);
     }
 
-    public void eachMessage(String folderName, int start, int end, Closure closure) throws Exception {
+    public void eachMessage(String folderName, int start, int end, Closure<?> closure) throws Exception {
         WithContext<Object> action = ctx -> {
             Folder folder = ctx.store.getFolder(folderName);
             if (folder.exists()) {
@@ -146,7 +145,7 @@ public class IMAP {
         performWithContext(action);
     }
 
-    public void eachSearchedMessage(String folderName, Flags flags, Closure closure) throws Exception {
+    public void eachSearchedMessage(String folderName, Flags flags, Closure<?> closure) throws Exception {
         WithContext<Object> action = ctx -> {
             Folder folder = ctx.store.getFolder(folderName);
             if (folder.exists()) {
@@ -163,7 +162,7 @@ public class IMAP {
         performWithContext(action);
     }
 
-    public void eachSearchedMessage(String folderName, SearchTerm searchTerm, Closure closure) throws Exception {
+    public void eachSearchedMessage(String folderName, SearchTerm searchTerm, Closure<?> closure) throws Exception {
         WithContext<Object> action = ctx -> {
             Folder folder = ctx.store.getFolder(folderName);
             if (folder.exists()) {
@@ -199,7 +198,7 @@ public class IMAP {
         }
     }
 
-    private static Properties createEnvironment(String urlSpec) throws MalformedURLException {
+    private static Properties createEnvironment(String urlSpec) {
         URI uri = URI.create(urlSpec);
         Properties env = new Properties();
         env.setProperty("mail.store.protocol", "imap");

@@ -1,127 +1,36 @@
 plugins {
-    id "com.github.spotbugs" version "2.0.0"
-    id "org.xbib.gradle.plugin.asciidoctor" version "1.5.4.1.0"
-    id "io.codearte.nexus-staging" version "0.11.0"
+    id "de.marcphilipp.nexus-publish" version "0.4.0"
+    id "io.codearte.nexus-staging" version "0.21.1"
 }
 
-apply plugin: 'groovy'
-apply plugin: 'maven'
-apply plugin: 'pmd'
-apply plugin: 'checkstyle'
-apply plugin: 'org.xbib.gradle.plugin.asciidoctor'
-apply plugin: "io.codearte.nexus-staging"
-
-dependencies {
-    compile "com.sun.mail:javax.mail:${project.property('mail.version')}"
-    compileOnly "org.codehaus.groovy:groovy-all:${project.property('groovy.version')}"
-    testCompile "org.codehaus.groovy:groovy-all:${project.property('groovy.version')}"
-    testCompile "junit:junit:${project.property('junit.version')}"
-}
-
-compileJava {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier 'sources'
-    from sourceSets.main.allSource
-}
-
-groovydoc {
-    docTitle = description
-}
-
-task groovydocJar(type: Jar, dependsOn: 'groovydoc') {
-    from groovydoc.destinationDir
-    classifier = 'javadoc' // for sonatype validation
-}
-
-artifacts {
-    archives sourcesJar, groovydocJar
+wrapper {
+    gradleVersion = "${rootProject.property('gradle.wrapper.version')}"
+    distributionType = Wrapper.DistributionType.ALL
 }
 
 ext {
     user = 'jprante'
-    projectName = 'groovy-mail'
-    projectDescription = 'Mail extensions for Groovy'
-    scmUrl = "https://github.com/${user}/${name}"
-    scmConnection = "scm:git:git://github.com/${user}/${name}.git"
-    scmDeveloperConnection = "scm:git:git://github.com/${user}/${name}.git"
+    name = 'groovy-mail'
+    description = 'Mail extensions for Groovy'
+    inceptionYear = '2012'
+    url = 'https://github.com/' + user + '/' + name
+    scmUrl = 'https://github.com/' + user + '/' + name
+    scmConnection = 'scm:git:git://github.com/' + user + '/' + name + '.git'
+    scmDeveloperConnection = 'scm:git:ssh://git@github.com:' + user + '/' + name + '.git'
+    issueManagementSystem = 'Github'
+    issueManagementUrl = ext.scmUrl + '/issues'
+    licenseName = 'The Apache License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 }
 
-task sonatypeUpload(type: Upload) {
-    configuration = configurations.archives
-    uploadDescriptor = true
-    repositories {
-        if (project.hasProperty('ossrhUsername')) {
-            mavenDeployer {
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                repository(url: uri(ossrhReleaseUrl)) {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-                snapshotRepository(url: uri(ossrhSnapshotUrl)) {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-                }
-                pom.project {
-                    name projectName
-                    description projectDescription
-                    packaging 'jar'
-                    inceptionYear '2016'
-                    url scmUrl
-                    organization {
-                        name 'xbib'
-                        url 'http://xbib.org'
-                    }
-                    developers {
-                        developer {
-                            id user
-                            name 'Jörg Prante'
-                            email 'joergprante@gmail.com'
-                            url 'https://github.com/jprante'
-                        }
-                    }
-                    scm {
-                        url scmUrl
-                        connection scmConnection
-                        developerConnection scmDeveloperConnection
-                    }
-                    licenses {
-                        license {
-                            name 'The Apache License, Version 2.0'
-                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+apply plugin: 'java-library'
+apply from: rootProject.file('gradle/ide/idea.gradle')
+apply from: rootProject.file('gradle/compile/java.gradle')
+apply from: rootProject.file('gradle/compile/groovy.gradle')
+apply from: rootProject.file('gradle/test/junit5.gradle')
+apply from: rootProject.file('gradle/publishing/publication.gradle')
+apply from: rootProject.file('gradle/publishing/sonatype.gradle')
 
-nexusStaging {
-    packageGroup = "org.xbib"
-}
-
-spotbugs {
-    toolVersion = '3.1.12'
-    sourceSets = [sourceSets.main]
-    ignoreFailures = true
-    effort = "max"
-    reportLevel = "high"
-}
-
-tasks.withType(Pmd) {
-    ignoreFailures = true
-    reports {
-        xml.enabled = true
-        html.enabled = true
-    }
-}
-
-tasks.withType(Checkstyle) {
-    ignoreFailures = true
-    reports {
-        xml.enabled = true
-        html.enabled = true
-    }
+dependencies {
+    api "com.sun.mail:javax.mail:${project.property('mail.version')}"
 }

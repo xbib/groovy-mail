@@ -11,7 +11,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Date;
 import java.util.Properties;
@@ -117,7 +116,7 @@ public class SMTP {
         }
     }
 
-    private static Properties createEnvironment(String urlSpec) throws MalformedURLException {
+    private static Properties createEnvironment(String urlSpec) {
         URI uri = URI.create(urlSpec);
         Properties env = new Properties();
         env.setProperty("mail.smtp.auth",  "false");
